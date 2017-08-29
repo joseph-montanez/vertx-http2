@@ -1,0 +1,67 @@
+buildscript {
+    ext.kotlin_version = '1.1.4'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+plugins {
+    id "application"
+    id "com.github.johnrengelman.shadow" version "1.2.3"
+}
+
+apply plugin: "kotlin"
+
+group 'com.shabb'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+shadowJar {
+    baseName = 'app'
+    classifier = 'shadow'
+
+    manifest {
+        attributes 'Main-Verticle': 'com.shabb.chores.ExampleVerticle'
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}
+
+def alpnAgentVersion = '2.0.6'
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile group: 'io.vertx', name: 'vertx-core', version: '3.4.2'
+
+    // ALPN
+    runtime "io.netty:netty-tcnative-boringssl-static:2.0.6.Final"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+mainClassName = 'io.vertx.core.Launcher'
+def mainVerticleName = 'com.shabb.chores.ExampleVerticle'
+
+run {
+    args = ["run", mainVerticleName,
+            "--launcher-class=$mainClassName",
+            "--redeploy=src/**/*.*",
+            "--on-redeploy=./gradlew classes"
+    ]
+}
+
+task stage {
+    dependsOn shadowJar
+}
